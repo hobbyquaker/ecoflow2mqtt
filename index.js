@@ -91,6 +91,14 @@ function handleFrame(frame) {
         }
         return;
     }
+    if (!frame.items) {
+        // decoded, but nothing to publish (RuntimePropertyUpload: the device's upload periods)
+        if (!seenFrames.has(frame.key)) {
+            seenFrames.add(frame.key);
+            log.debug(`inverter < ${frame.name}: ${JSON.stringify(frame.data)}`);
+        }
+        return;
+    }
 
     lastFrame = Date.now();
     setDeviceConnected(true);

@@ -55,12 +55,51 @@ describe('decode: captured frames', () => {
         assert.ok(pushed.data, 'decoded');
     });
 
-    test('unmapped pairs come back without data but with their payload', () => {
-        const runtime = allFrames.find((frame) => frame.key === '254/22');
+    test('RuntimePropertyUpload decodes but feeds no items — it carries the upload periods', () => {
+        const runtime = allFrames.find((frame) => frame.key === '254/22' && frame.pdata.length > 0);
         assert.equal(runtime.name, 'RuntimePropertyUpload');
-        assert.equal(runtime.data, null);
-        assert.ok(runtime.pdata.length > 0);
+        assert.equal(runtime.items, false);
+        assert.equal(runtime.data.displayPropertyFullUploadPeriod, 120_000);
+        assert.equal(runtime.data.displayPropertyIncrementalUploadPeriod, 2000);
         assert.equal(runtime.error, null);
+    });
+
+    test('a pair we do not map at all comes back without data, but with its payload', () => {
+        const acks = allFrames.filter((frame) => frame.key === '254/18');
+        assert.ok(acks.length > 0, 'run 1 caught the app writing config');
+        assert.equal(acks[0].name, 'ConfigWriteAck');
+        assert.equal(acks[0].data, null);
+        assert.equal(acks[0].items, false);
+        assert.equal(acks[0].error, null);
+    });
+
+    test('a full frame carries the whole item set: pv, grid, limits, signal', () => {
+        const full = allFrames
+            .filter((frame) => frame.key === '254/21' && frame.data)
+            .sort((a, b) => Object.keys(b.data).length - Object.keys(a.data).length)[0];
+
+        assert.equal(full.items, true);
+        for (const field of [
+            'powGetPv',
+            'powGetPv2',
+            'plugInInfoPvVol',
+            'plugInInfoPvAmp',
+            'plugInInfoPv2Vol',
+            'plugInInfoPv2Amp',
+            'gridConnectionPower',
+            'gridConnectionVol',
+            'gridConnectionAmp',
+            'gridConnectionFreq',
+            'gridConnectionSta',
+            'feedGridModePowLimit',
+            'feedGridModePowMax',
+            'moduleWifiRssi',
+        ]) {
+            assert.ok(Object.hasOwn(full.data, field), `${field} missing from the full frame`);
+        }
+        // volt x amp is the power the device reports, within rounding
+        assert.ok(Math.abs(full.data.plugInInfoPvVol * full.data.plugInInfoPvAmp - full.data.powGetPv) < 1);
+        assert.ok(full.data.gridConnectionVol > 200 && full.data.gridConnectionVol < 260);
     });
 
     test('the first full frame of run 1 carries both pv inputs', () => {
@@ -80,7 +119,7 @@ describe('decode: captured frames', () => {
         const displays = allFrames.filter((frame) => frame.key === '254/21');
         const sizes = displays.map((frame) => Object.keys(frame.data).length);
         assert.ok(Math.min(...sizes) <= 1, 'incrementals may carry nothing we map');
-        assert.ok(Math.max(...sizes) >= 6, 'full frames carry both inputs plus volt/amp');
+        assert.ok(Math.max(...sizes) >= 14, 'full frames carry the whole item set');
     });
 
     test('replies on the get_reply topic are not obfuscated', () => {

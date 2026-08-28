@@ -5,24 +5,40 @@ following the [mqtt-smarthome](https://github.com/mqtt-smarthome/mqtt-smarthome)
 Home Assistant discovery. Built on
 [mqtt-interfaces-core](https://github.com/hobbyquaker/mqtt-interfaces-core).
 
-**0.1.0 publishes the current PV power — both inputs and the total — and nothing else.** That is
-deliberate: the protocol work is done ([RESEARCH.md](RESEARCH.md)), the remaining readings and the
-settables are the next milestones ([ROADMAP.md](ROADMAP.md)). Values arrive every few seconds, the
-way the EcoFlow app shows them, without the app having to be open.
+**0.2.0 publishes everything the inverter reports: PV power per input and in total, what goes into
+the grid, the voltages, currents, frequency, feed-in limit and Wi-Fi signal.** It is still read
+only — writing the feed-in limit is the next milestone ([ROADMAP.md](ROADMAP.md)); the protocol
+research is in [RESEARCH.md](RESEARCH.md). Values arrive every few seconds, the way the EcoFlow app
+shows them, without the app having to be open.
 
 ## Topics
 
-| Topic                                          | Payload                            | Meaning                        |
-| ---------------------------------------------- | ---------------------------------- | ------------------------------ |
-| `<name>/status/pv1_watts`                      | `{"val": 81.7, "ts": …, "lc": …}`  | PV input 1, W                  |
-| `<name>/status/pv2_watts`                      | `{"val": 81.1, "ts": …, "lc": …}`  | PV input 2, W                  |
-| `<name>/status/pv_watts`                       | `{"val": 162.8, "ts": …, "lc": …}` | total (input 1 + input 2), W   |
-| `<name>/connected`                             | `0` \| `1` \| `2`                  | 2 = frames are arriving        |
-| `<name>/info`                                  | JSON                               | version, region, masked serial |
-| `<name>/maintenance/set/loglevel`, `…/restart` | `debug` …                          | provided by the core           |
+All under `<name>/status/`, retained, payload `{"val": …, "ts": …, "lc": …}`:
+
+| Item                                 | Example             | Meaning                                        |
+| ------------------------------------ | ------------------- | ---------------------------------------------- |
+| `pv1_watts`                          | `114.7`             | PV input 1, W                                  |
+| `pv2_watts`                          | `112`               | PV input 2, W                                  |
+| `pv_watts`                           | `226.7`             | both inputs together, W                        |
+| `grid_watts`                         | `226`               | what actually goes into the grid, W            |
+| `grid_status`                        | `feed_grid`         | `feed_grid`, `grid_in`, `offline` or `invalid` |
+| `pv1_volts`, `pv1_amps`              | `33.71`, `3.64`     | PV input 1, V and A                            |
+| `pv2_volts`, `pv2_amps`              | `33.38`, `3.58`     | PV input 2, V and A                            |
+| `grid_volts`, `grid_amps`, `grid_hz` | `238`, `1.01`, `50` | the mains side                                 |
+| `feed_limit_watts`                   | `600`               | feed-in limit the inverter runs with, W        |
+| `feed_limit_max_watts`               | `600`               | highest limit it accepts, W                    |
+| `wifi_rssi`                          | `-59`               | Wi-Fi signal of the inverter, dBm              |
+
+Plus, next to `status/`:
+
+| Topic                                          | Payload           | Meaning                        |
+| ---------------------------------------------- | ----------------- | ------------------------------ |
+| `<name>/connected`                             | `0` \| `1` \| `2` | 2 = frames are arriving        |
+| `<name>/info`                                  | JSON              | version, region, masked serial |
+| `<name>/maintenance/set/loglevel`, `…/restart` | `debug` …         | provided by the core           |
 
 `<name>` is the instance name, `ecoflow` by default (`--name`). Payloads are `{val, ts, lc}` JSON
-unless the instance runs with `--no-json-payloads`. There are no `set/` topics yet — 0.1.0 is read
+unless the instance runs with `--no-json-payloads`. There are no `set/` topics yet — 0.2.0 is read
 only.
 
 ## Install
@@ -95,10 +111,15 @@ Plus the shared options of every adapter (`--name`, `-u/--mqtt-url`, `--json-pay
 
 ## Home Assistant
 
-Discovery is on by default: the inverter shows up as one device with three power sensors
-(`device_class: power`, `state_class: measurement`), available while `<name>/connected` is `2`.
-Turn it off with `--no-ha-discovery`. An energy (kWh) sensor for the energy dashboard needs the
-device's energy counters — that is a later milestone.
+Discovery is on by default: the inverter shows up as one device with fifteen sensors, available
+while `<name>/connected` is `2`. The four power values and the grid status are the primary
+entities; voltages, currents, frequency, the limits and the Wi-Fi signal are filed under
+diagnostics. Readings carry `state_class: measurement`, so HA keeps long-term statistics for them.
+Turn discovery off with `--no-ha-discovery`.
+
+For the energy dashboard you need kWh, and this firmware sends no energy counters — add a
+[Riemann sum helper](https://www.home-assistant.io/integrations/integration/) on `pv_watts` (or on
+`grid_watts` for what you actually feed in).
 
 ## How it works, and what that means for you
 
@@ -113,7 +134,7 @@ one-byte XOR; the decoder and the field numbers are in `lib/proto/`.
   minutes with the app closed. Reports of the stream throttling when nobody is watching did not
   reproduce on this path; if yours does stall, set `--stream-interval 20` and please open an issue.
 - **Your credentials stay on your machine**; they go to EcoFlow's login endpoint only.
-- **Nothing is written to the inverter.** 0.1.0 only reads.
+- **Nothing is written to the inverter.** 0.2.0 only reads.
 
 ## Contributing a capture
 

@@ -11,7 +11,10 @@
 //
 // Observed on a STREAM Microinverter (product_id 17409) on 2026-08-28: pow_get_pv (361) and
 // pow_get_pv2 (70) are sent, pow_get_pv_sum (517) is never sent — the adapter computes the total
-// (ROADMAP.md E-4).
+// (ROADMAP.md E-4). A full frame carries 31 fields; the ones still unnamed are logged at debug
+// (133 = 200, 135, 371 = 31..32, 617, 618 = 1, 638, 729-734 with 731 = 10001, and a few empty
+// byte fields). 371 and 730 look like temperatures in °C but nothing confirms that yet, so they
+// stay out of the item table rather than being guessed at (ROADMAP.md OQ-E7).
 
 syntax = "proto3";
 
@@ -23,6 +26,22 @@ message DisplayPropertyUpload {
     optional float plug_in_info_pv_amp = 381; // PV input 1 current, A
     optional float plug_in_info_pv2_vol = 442; // PV input 2 voltage, V
     optional float pow_get_pv_sum = 517; // total PV power, W (not sent by the firmware seen so far)
+    optional uint32 feed_grid_mode_pow_limit = 521; // feed-in limit, W
+    optional float module_wifi_rssi = 602; // wifi signal, dBm
+    optional float grid_connection_vol = 613; // grid voltage, V
+    optional float grid_connection_amp = 614; // grid current, A
+    optional float grid_connection_freq = 615; // grid frequency, Hz
+    optional float grid_connection_power = 616; // power fed into the grid, W
+    optional uint32 grid_connection_sta = 619; // 0 invalid, 1 grid in, 2 offline, 3 feed grid
+    optional uint32 feed_grid_mode_pow_max = 727; // highest feed-in limit the device accepts, W
+}
+
+// cmd_func 254 / cmd_id 22: the upload periods the device runs with (ms). No temperatures, so it
+// contributes no items — it is decoded to make the cadence visible at debug level.
+message RuntimePropertyUpload {
+    optional uint32 display_property_full_upload_period = 293; // 120000 ms observed
+    optional uint32 display_property_incremental_upload_period = 294; // 2000 ms observed
+    // 295 (300000) and 296 (60000) are the same pair for the runtime properties [unverified]
 }
 
 // app -> device "activate stream": cmd_func 96, cmd_id 97. Off by default (ROADMAP.md E-9).

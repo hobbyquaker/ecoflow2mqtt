@@ -188,13 +188,21 @@ Package name reserved on npm; `index.js` prints a pointer and exits 1.
 - [ ] 24 h soak: cadence stays at ~2–6 s without the app open, no session pile-up, memory flat
 - [ ] Publish 0.1.0 to npm
 
-### 0.2.0 — the rest of the STREAM Micro readings
+### 0.2.0 — the rest of the STREAM Micro readings ✅ (2026-08-28)
 
-Grid `grid_watts/_volts/_amps/_hz`, `grid_status`, `pv1_volts/_amps`, `pv2_volts/_amps`,
-`feed_limit_watts`, `feed_limit_max_watts`, `wifi_rssi` (R §4.5 table) — all as item-table rows and
-fixtures, no new mechanism. `RuntimePropertyUpload` (254/22) decoded if it carries temperatures.
-Energy counters (`BatchEnergyTotalReport` 254/32, Wh per PV input) if the STREAM Micro sends them
-(OQ-E3).
+- [x] `grid_watts`, `grid_status`, `pv1_volts/_amps`, `pv2_volts/_amps`, `grid_volts/_amps/_hz`,
+      `feed_limit_watts`, `feed_limit_max_watts`, `wifi_rssi` — 15 items, all rows in the table,
+      no new mechanism (E-7 holds up: the change is `bk_series.proto` plus `items.js`).
+- [x] Per-row `precision` (mains volts 1 decimal, string currents 2, RSSI integer) and a `map` for
+      the enum item; `measurement: false` marks the limits as settings, not readings.
+- [x] Discovery: power + status primary, the rest `diagnostic`; `grid_status` as an HA enum sensor
+      with its options; no `state_class` on the limits; icons only where no device class implies one.
+- [x] `RuntimePropertyUpload` (254/22) decoded — **no temperatures**, it carries the upload periods
+      (full 120 s, incremental 2 s, matching R §2). Logged once at debug, contributes no items.
+- [x] 92 tests, of which the decode and item tests run against the captures; live run 2026-08-28:
+      all 15 items on the broker, `grid_volts` 238 V, `grid_hz` 50, `grid_status` `feed_grid`.
+- [x] **OQ-E3 closed:** `BatchEnergyTotalReport` (254/32) never appeared in ~20 minutes of frames,
+      so the device sends no energy counters. No kWh item; the README points at HA's Riemann sum.
 
 ### 0.3.0 — settables
 

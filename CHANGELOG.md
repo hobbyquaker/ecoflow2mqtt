@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.2.0 - 2026-08-28
+
+Everything the inverter reports, not just PV power.
+
+### Added
+
+- Twelve more items: `grid_watts` (what actually reaches the grid), `grid_status`
+  (`feed_grid` / `grid_in` / `offline` / `invalid`), `pv1_volts` / `pv1_amps` / `pv2_volts` /
+  `pv2_amps`, `grid_volts` / `grid_amps` / `grid_hz`, `feed_limit_watts`,
+  `feed_limit_max_watts` and `wifi_rssi`.
+- Home Assistant discovery announces them accordingly: the power values and the grid status as
+  primary entities, the rest as diagnostics; `grid_status` as an enum sensor with its options, and
+  no `state_class` on the feed-in limits, which are settings rather than readings.
+- `RuntimePropertyUpload` (254/22) is decoded: it carries the device's upload periods (2 s
+  incremental, 120 s full) and is logged once at debug level. It contributes no items.
+
+### Notes
+
+- Still read only; writing the feed-in limit is 0.3.0.
+- The firmware sends no energy counters (`BatchEnergyTotalReport` never appeared in ~20 minutes of
+  frames), so there is no kWh item — use a Riemann sum helper in Home Assistant.
+
 ## 0.1.1
 
 ### Added
