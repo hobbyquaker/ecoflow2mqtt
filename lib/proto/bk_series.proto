@@ -1,0 +1,31 @@
+// EcoFlow STREAM family (BK series: STREAM Microinverter BK01/BK02/N011, STREAM AC/Ultra/Pro).
+//
+// Field numbers reverse-engineered by the community; this file follows
+// tolwi/hassio-ecoflow-cloud (Apache License 2.0) `ef_bk_series.proto` and
+// rabits/ha-ef-ble (Apache License 2.0) `bk_series.proto`. Only the subset ecoflow2mqtt decodes
+// today is declared — an unknown field is skipped by protobuf, so adding a row later is enough.
+//
+// All values are floats in their natural unit (W, V, A, Hz) — no scaling. Every field is
+// `optional`: DisplayPropertyUpload is incremental (only changed fields, every ~2 s), the full
+// frame (~31 fields) arrives every ~120 s and as the reply to a property get.
+//
+// Observed on a STREAM Microinverter (product_id 17409) on 2026-08-28: pow_get_pv (361) and
+// pow_get_pv2 (70) are sent, pow_get_pv_sum (517) is never sent — the adapter computes the total
+// (ROADMAP.md E-4).
+
+syntax = "proto3";
+
+message DisplayPropertyUpload {
+    optional float pow_get_pv2 = 70; // PV input 2 power, W
+    optional float plug_in_info_pv2_amp = 71; // PV input 2 current, A
+    optional float pow_get_pv = 361; // PV input 1 power, W
+    optional float plug_in_info_pv_vol = 380; // PV input 1 voltage, V
+    optional float plug_in_info_pv_amp = 381; // PV input 1 current, A
+    optional float plug_in_info_pv2_vol = 442; // PV input 2 voltage, V
+    optional float pow_get_pv_sum = 517; // total PV power, W (not sent by the firmware seen so far)
+}
+
+// app -> device "activate stream": cmd_func 96, cmd_id 97. Off by default (ROADMAP.md E-9).
+message EnergyStreamSwitch {
+    optional int32 sw = 1;
+}

@@ -1,0 +1,43 @@
+// EcoFlow protobuf envelope, used by every protobuf device (PowerStream, Smart Plug, STREAM
+// family). One MQTT message may stack several Header entries.
+//
+// Field numbers reverse-engineered by the community; this file follows
+// tolwi/hassio-ecoflow-cloud (Apache License 2.0)
+// custom_components/ecoflow_cloud/devices/internal/proto/*.proto
+// and rabits/ha-ef-ble (Apache License 2.0) eflib/pb/*.proto.
+//
+// pdata is the payload of the (cmd_func, cmd_id) message; when enc_type == 1 and src != 32 every
+// byte is XORed with (seq & 0xFF) — see lib/proto/decode.js.
+
+syntax = "proto3";
+
+message Header {
+    bytes pdata = 1;
+    int32 src = 2;
+    int32 dest = 3;
+    int32 d_src = 4;
+    int32 d_dest = 5;
+    int32 enc_type = 6;
+    int32 check_type = 7;
+    int32 cmd_func = 8;
+    int32 cmd_id = 9;
+    int32 data_len = 10;
+    int32 need_ack = 11;
+    int32 is_ack = 12;
+    uint32 seq = 14;
+    int32 product_id = 15;
+    int32 version = 16;
+    int32 payload_ver = 17;
+    int32 time_snap = 18;
+    int32 is_rw_cmd = 19;
+    int32 is_queue = 20;
+    int32 ack_type = 21;
+    string code = 22;
+    string from = 23;
+    string module_sn = 24;
+    string device_sn = 25;
+}
+
+message HeaderMessage {
+    repeated Header header = 1;
+}
