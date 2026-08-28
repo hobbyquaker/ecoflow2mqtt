@@ -56,16 +56,26 @@ describe('client id', () => {
     });
 
     test('an unwritable state directory warns but still yields a usable uuid', () => {
+        // a file where the directory should be: ENOTDIR for every user, root included, and it
+        // fails immediately — a path under /proc makes mkdirSync block forever on Linux
+        const dir = tempDir();
+        const blocked = path.join(dir, 'not-a-directory');
+        fs.writeFileSync(blocked, 'this is a file');
+
         const warnings = [];
         const uuid = loadClientUuid({
-            stateDir: '/proc/nonexistent-for-ecoflow2mqtt',
+            stateDir: path.join(blocked, 'state'),
             name: 'ecoflow',
             log: {...silentLog, warn: (m) => warnings.push(m)},
         });
 
         assert.match(uuid, /^[0-9A-F]{32}$/);
-        assert.equal(warnings.length, 1);
-        assert.match(warnings[0], /temporary/);
+        // one warning for the failed read, one for the failed write — both name the path
+        assert.match(warnings.at(-1), /temporary/);
+        for (const warning of warnings) {
+            assert.match(warning, /not-a-directory/);
+        }
+        fs.rmSync(dir, {recursive: true, force: true});
     });
 
     test('the default state dir follows systemd, then the home directory', () => {
