@@ -53,3 +53,21 @@ eslint + prettier (4 spaces, single quotes, no bracket spacing, width 120).
 Live tests need a device: credentials from `.local.env`, e.g.
 `node index.js -u mqtt://<broker> -v debug`. Do not point tests at the production broker without
 saying so.
+
+## Deployment
+
+`npm run deploy` (= `bash deploy.sh [user@host]`, default host `mqtt-ifaces`) runs the tests, packs
+the module, installs it into the remote global `node_modules` and restarts every running
+`ecoflow2mqtt@<name>` unit. It never creates a service — install one once:
+
+```bash
+# credentials over stdin, so they never appear in argv or in shell history
+{ echo "export ECOFLOW2MQTT_EMAIL=..."; echo "export ECOFLOW2MQTT_PASSWORD=..."; \
+  echo "export ECOFLOW2MQTT_SN=..."; echo "export ECOFLOW2MQTT_REGION=eu"; \
+  echo "ecoflow2mqtt --install --name ecoflow -u mqtt://mqtt.lan.raff.rocks"; } | ssh host 'bash -s'
+```
+
+Pass `-u <broker>` at install time: the installer writes every option into
+`/etc/<service>/<name>.env`, so without it the default `mqtt://localhost` is baked in and shadows
+the shared `/etc/mqtt-interfaces/broker.env`. `--install` on an existing instance rewrites the env
+file (keeping a `.bak`) but does not restart the unit — `systemctl restart` afterwards.
