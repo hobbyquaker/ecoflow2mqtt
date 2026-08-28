@@ -49,6 +49,20 @@ Every option can also be set as an environment variable (`ECOFLOW2MQTT_SN`, `ECO
 share `/etc/mqtt-interfaces/broker.env`. Prefer the env file over the command line — a process list
 is world readable.
 
+### Docker
+
+Multi-arch image (amd64, arm64, armv7):
+
+```
+docker run -d --name ecoflow2mqtt --restart unless-stopped -v ecoflow2mqtt:/data \
+  -e ECOFLOW2MQTT_EMAIL=you@example.com -e ECOFLOW2MQTT_PASSWORD='your-app-password' \
+  -e ECOFLOW2MQTT_SN=BK01Z... -e ECOFLOW2MQTT_MQTT_URL=mqtt://broker \
+  ghcr.io/hobbyquaker/ecoflow2mqtt
+```
+
+The `/data` volume keeps the mqtt client id stable across restarts — without it EcoFlow's broker
+sees a new client on every start.
+
 ## What you need
 
 - The **EcoFlow app account** the inverter is bound to (a shared device does not work — bind it to

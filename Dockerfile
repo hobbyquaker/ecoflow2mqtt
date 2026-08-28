@@ -18,6 +18,7 @@ ENV NODE_ENV=production \
 #   docker run -e ECOFLOW2MQTT_EMAIL=... -e ECOFLOW2MQTT_PASSWORD=... -e ECOFLOW2MQTT_SN=... \
 #              -e ECOFLOW2MQTT_MQTT_URL=mqtt://broker -v ecoflow:/data ...
 # /data keeps the mqtt client id stable across restarts (mount a volume)
+RUN mkdir /data && chown node:node /data
 VOLUME /data
 USER node
 

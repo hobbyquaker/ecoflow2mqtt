@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.1
+
+### Added
+
+- Docker images on `ghcr.io/hobbyquaker/ecoflow2mqtt`, built for amd64, arm64 and armv7 by the
+  release workflow on every tag (`x.y.z`, `x.y`, `latest`); `docker run` example in the README.
+
+### Fixed
+
+- The image creates `/data` owned by `node`: on a fresh volume docker created the mount point
+  root-owned, so the container could not persist the mqtt client id.
+
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), the project uses
 [semantic versioning](https://semver.org/).
