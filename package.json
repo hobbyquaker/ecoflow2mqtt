@@ -1,6 +1,6 @@
 {
   "name": "ecoflow2mqtt",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Interface between EcoFlow STREAM / PowerStream micro-inverters and MQTT",
   "type": "module",
   "main": "index.js",
@@ -59,7 +59,7 @@
   },
   "dependencies": {
     "mqtt": "^5.10.0",
-    "mqtt-interfaces-core": "^0.11.3",
+    "mqtt-interfaces-core": "^0.12.0",
     "protobufjs": "^7.4.0"
   },
   "devDependencies": {

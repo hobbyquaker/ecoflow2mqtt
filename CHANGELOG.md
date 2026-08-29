@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.1
+
+### Changed
+
+- Requires mqtt-interfaces-core ≥ 0.12.0, so `--config-schema` publishes `x-discover-needs:
+["email", "password"]` beside the `x-discover` marker. Without it a management UI could see that
+  the adapter is discoverable but not that the scan is an account login, and would offer a scan
+  that could only fail with "Missing required arguments". she 1.40.0 reads this and collects the
+  credentials before enabling the button. Nothing changes on the command line.
+
 ## 0.3.0
 
 ### Added
