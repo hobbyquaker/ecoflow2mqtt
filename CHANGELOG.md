@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.3.0
+
+### Added
+
+- **`--discover`** — list the devices the EcoFlow account owns (serial, name, online) and exit,
+  `--discover-json` for JSON, and **`--sn auto`**, which takes the serial when the account owns
+  exactly one device and refuses when it owns several. `--install --sn auto` resolves it once and
+  writes it into the instance's env file, so a service start no longer depends on EcoFlow's API.
+- The `sn` option carries `x-discover: "cloud"` in `--config-schema`, which is how a management UI
+  (she) knows to offer this when an instance is added — it showed nothing before.
+- `deviceList()` in `lib/app/login.js`: `GET /iot-service/user/device`, tolerating both response
+  shapes the notes record (`data.bound` keyed by serial, which is what the real account returns,
+  and a plain list) because the endpoint is unofficial and has changed before.
+- The model shown is derived from the serial prefix (`BK01…` → STREAM Microinverter), not from
+  EcoFlow's `model` field, which is a bare number naming nothing we can interpret.
+
+### Notes
+
+- This is **not** a network scan and there is nothing on the LAN to scan for: the inverter only
+  ever talks to EcoFlow's broker. `--discover` is an account login, so unlike every other adapter
+  in the fleet it requires `--email` and `--password`; `--sn`, the option it fills, stays exempt.
+- A device EcoFlow reports as offline is still listed. The flag lags by up to ~15 minutes, and an
+  inverter that is dark at night is still the one to configure.
+- Needs mqtt-interfaces-core ≥ 0.11.3, which grew the `cloud` hint, `hint.needs` and cloud
+  failures that propagate rather than being reported as an empty result.
+
 ## 0.2.0 - 2026-08-28
 
 Everything the inverter reports, not just PV power.

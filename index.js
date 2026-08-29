@@ -8,7 +8,7 @@
  * (ROADMAP.md §1); there are no settable items yet.
  */
 
-import {createAdapter} from 'mqtt-interfaces-core';
+import {createAdapter, createLogger, runDiscovery, autoAddress} from 'mqtt-interfaces-core';
 import config, {stateDirOf} from './config.js';
 import pkg from './package.json' with {type: 'json'};
 import {handle as handleInstall} from './lib/install.js';
@@ -19,6 +19,30 @@ import {createCapture} from './lib/capture.js';
 import {discoveryModel} from './lib/hadiscovery.js';
 import {maskSn, modelOf} from './lib/mask.js';
 import {apiHostOf} from './lib/app/login.js';
+import {discoveryHint} from './lib/discovery.js';
+
+/*
+ * Finding the inverter (core B-2): there is nothing on the LAN to scan — the device only ever
+ * talks to EcoFlow's broker — so --discover logs into the account and lists what it owns, and
+ * `--sn auto` takes the serial when the account owns exactly one. Before handleInstall() so
+ * `--install --sn auto` persists the serial instead of resolving it on every service start,
+ * which would make each start depend on EcoFlow's api being up. The adapter does not exist yet,
+ * so discovery gets its own logger.
+ */
+if (config.discover || config.sn === 'auto') {
+    const discoveryLog = createLogger({envPrefix: config.$envPrefix || 'ECOFLOW2MQTT', level: config.verbosity});
+    const hint = discoveryHint(config);
+    if (config.discover) {
+        await runDiscovery({hint, config, log: discoveryLog}); // prints and exits
+    }
+    try {
+        config.sn = await autoAddress(hint, {config, log: discoveryLog});
+    } catch (err) {
+        // none, or several inverters on the account: bridging the wrong one is worse than stopping
+        discoveryLog.error('--sn auto:', err.message);
+        process.exit(1);
+    }
+}
 
 handleInstall(config); // --install / --uninstall never reach the rest
 

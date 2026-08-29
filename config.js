@@ -11,6 +11,7 @@
 import {parseConfig} from 'mqtt-interfaces-core';
 import pkg from './package.json' with {type: 'json'};
 import {REGIONS} from './lib/app/login.js';
+import {DISCOVERY_SHAPE} from './lib/discovery.js';
 import {defaultStateDir} from './lib/clientid.js';
 
 export const OPTIONS = {
@@ -28,9 +29,11 @@ export const OPTIONS = {
     },
     sn: {
         type: 'string',
-        describe: 'serial number of the inverter (as shown in the app)',
+        describe: 'serial number of the inverter (as shown in the app), or "auto" (see --discover)',
         demandOption: true,
         secret: true,
+        // the option --discover fills; one inverter per instance, so it stays a single value
+        discover: true,
     },
     region: {
         type: 'string',
@@ -100,9 +103,11 @@ export function parse(overrides = {}) {
         pkg,
         defaults: {name: 'ecoflow'},
         options: OPTIONS,
+        discovery: DISCOVERY_SHAPE,
         check,
         examples: [
             ['$0 --email me@example.com --password secret --sn BK01Z... -u mqtt://broker', 'run in the foreground'],
+            ['$0 --email me@example.com --password secret --discover', 'list the account’s devices and exit'],
             ['sudo $0 --install -n balcony', 'install as service ecoflow2mqtt@balcony'],
         ],
         // the core's own epilog (environment variables) plus what is specific to this adapter

@@ -83,12 +83,41 @@ sees a new client on every start.
 
 - The **EcoFlow app account** the inverter is bound to (a shared device does not work — bind it to
   this account in the app).
-- The **serial number**, as shown in the app or on the device.
+- The **serial number**, as shown in the app or on the device — or let `--discover` find it, below.
 - The **region** the account was created in (`--region`, default `eu`). Accounts are region bound;
   a wrong region answers "account doesn't exist or incorrect password", which is also what an
   EcoFlow outage answers, so the adapter keeps retrying instead of giving up.
 
 No developer account, no API keys: the adapter logs in the way the app does.
+
+### Finding the serial number
+
+```
+ecoflow2mqtt --email you@example.com --password 'your-app-password' --discover
+```
+
+prints every device the account owns, with its serial, name and whether EcoFlow currently
+considers it online:
+
+```
+BK01Z…  Balcony  (cloud)
+```
+
+`--discover-json` gives the same as JSON. `--sn auto` takes the serial when the account owns
+exactly one device and refuses when it owns several, so nothing is guessed:
+
+```
+sudo ecoflow2mqtt --install -n balcony --email … --password … --sn auto
+```
+
+resolves it **once** and writes it into the instance's env file, rather than making every service
+start depend on EcoFlow's API being reachable.
+
+Note this is not a network scan, and there is nothing on your LAN to scan for: the inverter only
+ever talks to EcoFlow (see [How it works](#how-it-works-and-what-that-means-for-you)). `--discover`
+is a login, so unlike other adapters in the fleet it needs `--email` and `--password` — the two
+options it cannot do without. An `online: false` device is still listed: EcoFlow's flag lags by up
+to ~15 minutes, and an inverter that is dark at night is still the one you want to configure.
 
 ## Options
 
@@ -96,7 +125,7 @@ No developer account, no API keys: the adapter logs in the way the app does.
 | ------------------- | ------------------ | --------------------------------------------------------------- |
 | `--email`           | required           | EcoFlow app account                                             |
 | `--password`        | required           | its password                                                    |
-| `--sn`              | required           | serial number of the inverter                                   |
+| `--sn`              | required           | serial number of the inverter, or `auto` (see `--discover`)     |
 | `--region`          | `eu`               | `eu`, `us`, `global`, `americas`, `cn`                          |
 | `--api-host`        | from region        | override the API host                                           |
 | `--mqtt-host`       | from login         | override the EcoFlow broker (it occasionally names a wrong one) |

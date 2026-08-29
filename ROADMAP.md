@@ -204,14 +204,34 @@ Package name reserved on npm; `index.js` prints a pointer and exits 1.
 - [x] **OQ-E3 closed:** `BatchEnergyTotalReport` (254/32) never appeared in ~20 minutes of frames,
       so the device sends no energy counters. No kWh item; the README points at HA's Riemann sum.
 
-### 0.3.0 — settables
+### 0.3.0 — finding the inverter ✅ (2026-08-29)
+
+- [x] `--discover` and `--sn auto` on the core's discovery module (B-2, core 0.11.x). There is
+      nothing on the LAN to scan — the inverter only ever talks to EcoFlow — so this is the core's
+      `cloud` hint: `GET /iot-service/user/device` lists what the account owns, and the serial is
+      what `--sn` gets. `x-discover: "cloud"` in `--config-schema` is what she reads to offer it
+      when an instance is added; before this the adapter offered nothing there.
+- [x] Two things the core had to grow for it (0.11.0): `hint.needs`, because `--discover` normally
+      drops mandatory options and this scan _is_ an account login, so `--email` and `--password`
+      stay demanded while `--sn` — the option it fills — stays exempt; and cloud failures that
+      propagate, so a wrong password says so instead of being reported as an empty result.
+      0.11.1 then dropped `--discover-address` / `--discover-ip` from a cloud-only adapter's
+      `--help`, where a subnet to sweep is meaningless.
+- [x] `deviceList()` tolerates both documented response shapes (`data.bound` keyed by SN, which is
+      what the real account returns, and a plain list): the endpoint is unofficial and the notes
+      disagree. `online` is reported, never used to filter — EcoFlow's flag lags ~15 min and an
+      inverter dark at night is still the one to configure.
+- [x] 104 tests. Verified live against the real account on mqtt-ifaces.
+- Groundwork for **bridge mode** (§7): listing the account's devices is the half that mode needs.
+
+### 0.4.0 — settables
 
 `set/feed_limit_watts` (`cfg_feed_grid_mode_pow_limit`) and `set/inv_target_watts`
 (`cfg_inv_target_pwr`) via `ConfigWrite` (254/17) with ack (254/18) → HA `number` entities
 (R §4.5). Needs the exact packet header for the BK01 (`product_id`, `version`) — captured from what
 the app sends on `…/thing/property/set` (R §6).
 
-### 0.4.0 — official Developer API as second transport (`--mode official`)
+### 0.5.0 — official Developer API as second transport (`--mode official`)
 
 Only if the 1006 test passes (§6 item 4). HMAC signer with the official test vector (R §3.2),
 `/open/<account>/<sn>/quota` + `latestQuotas` keep-alive (R §3.4), same item table keyed by
@@ -242,7 +262,7 @@ online, productSkuId, createTime}` — STREAM Micro = `productType 55`.
    8 min, avg 3.2 s, max gap 10.3 s — **no throttling**; get every 60 s / `EnergyStreamSwitch`
    every 20 s: no change (E-9). pv1/pv2 values themselves update 1–12 times per minute (only on
    change; cloudy day, ~55 W per input).
-4. ⬜ Official API, one call: `/device/quota/all?sn=…` → data or error 1006 (decides 0.4.0).
+4. ⬜ Official API, one call: `/device/quota/all?sn=…` → data or error 1006 (decides 0.5.0).
    Needs developer-platform keys, not done.
 5. ⬜ Long-term: does the stream ever throttle without app/get (24 h soak, OQ-E1)? `--timeout` 300 s stays.
 
