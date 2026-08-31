@@ -50,6 +50,8 @@ const items = createItems();
 /** (cmd_func, cmd_id) pairs already logged, so unknown frames are reported once (E-7) */
 const seenFrames = new Set();
 let lastFrame = 0;
+/** when the current stale period was last warned about, 0 while frames are arriving */
+let lastStaleWarn = 0;
 let lastProductId = null;
 let staleTimer = null;
 let capture = null;
@@ -124,6 +126,10 @@ function handleFrame(frame) {
         return;
     }
 
+    if (lastStaleWarn) {
+        log.info(`frames from the inverter resumed after ${Math.round((Date.now() - lastFrame) / 1000)} s`);
+        lastStaleWarn = 0;
+    }
     lastFrame = Date.now();
     setDeviceConnected(true);
     if (frame.productId && frame.productId !== lastProductId) {
@@ -142,6 +148,9 @@ function handleFrame(frame) {
     }
 }
 
+/** while stale, warn once and then at most hourly: the inverter is off every night, that is normal */
+const STALE_WARN_INTERVAL = 3600_000;
+
 /** The device counts as connected while frames keep arriving (E-5) — the cloud's own flag lags. */
 function watchStaleness() {
     clearInterval(staleTimer);
@@ -151,7 +160,11 @@ function watchStaleness() {
         }
         const age = (Date.now() - lastFrame) / 1000;
         if (age > config.timeout) {
-            log.warn(`no frame from the inverter for ${Math.round(age)} s`);
+            const now = Date.now();
+            if (now - lastStaleWarn >= STALE_WARN_INTERVAL) {
+                lastStaleWarn = now;
+                log.warn(`no frame from the inverter for ${Math.round(age)} s`);
+            }
             setDeviceConnected(false);
         }
     }, 30_000);

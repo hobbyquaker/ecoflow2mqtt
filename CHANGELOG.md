@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.2
+
+### Changed
+
+- The staleness warning is logged once when the frames stop and then at most once an hour, instead
+  of every 30 seconds. The inverter is offline every night — it only produces during daylight — so
+  the old cadence filled the log with warnings about normal behaviour. `connected` still drops to
+  `1` as promptly as before, and the hourly counter resets when frames return, so the next outage
+  is reported immediately.
+- A gap now ends with an info line (`frames from the inverter resumed after N s`), so a nightly
+  outage reads as a pair in the log rather than as a warning that simply stops.
+
 ## 0.3.1
 
 ### Changed
