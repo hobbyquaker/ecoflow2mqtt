@@ -1,5 +1,7 @@
 # ecoflow2mqtt
 
+[![mqtt-smarthome](https://img.shields.io/badge/mqtt-smarthome-blue.svg)](https://github.com/mqtt-smarthome/mqtt-smarthome)
+
 Interface between EcoFlow **STREAM Microinverter** / **PowerStream** micro-inverters and MQTT,
 following the [mqtt-smarthome](https://github.com/mqtt-smarthome/mqtt-smarthome) convention, with
 Home Assistant discovery. Built on
